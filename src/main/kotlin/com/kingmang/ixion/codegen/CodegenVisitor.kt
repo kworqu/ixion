@@ -503,10 +503,16 @@ class CodegenVisitor(val api: IxApi, val rootContext: Context?, val source: IxFi
             ga.loadLocal(statement.localExprIndex)
         }
         ga.invokeInterface(IteratorType, Method("next", "()Ljava/lang/Object;"))
-        BuiltInType.INT.doUnboxing(ga)
-        statement.localExprIndex = ga.newLocal(Type.getType(BuiltInType.INT.descriptor))
+
+        val elementType: BuiltInType = when (val exprType = statement.expression.realType) {
+            is ListType -> exprType.contentType as BuiltInType
+            else -> BuiltInType.INT
+        }
+
+        elementType.doUnboxing(ga)
+        statement.localExprIndex = ga.newLocal(Type.getType(elementType.descriptor))
         funcType.localMap[statement.name.source] = statement.localExprIndex
-        funcType.ga!!.storeLocal(statement.localExprIndex, Type.getType(BuiltInType.INT.descriptor))
+        funcType.ga!!.storeLocal(statement.localExprIndex, Type.getType(elementType.descriptor))
 
         statement.block.accept(this)
 

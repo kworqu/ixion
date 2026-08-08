@@ -121,9 +121,17 @@ enum class BuiltInType(
                 false
             )
 
+            CHAR -> mv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                "java/lang/Character",
+                "valueOf",
+                "(C)Ljava/lang/Character;",
+                false
+            )
+
             STRING -> {}
             ANY -> {}
-            else -> System.err.println("Boxing isn't supported for that type.")
+            else -> throw UnsupportedOperationException("Boxing isn't supported for type: $this")
         }
     }
 
@@ -140,8 +148,8 @@ enum class BuiltInType(
             }
 
             FLOAT -> {
-                mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Integer")
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Integer", "floatValue", "()F", false)
+                mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Float")
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
             }
 
             DOUBLE -> {

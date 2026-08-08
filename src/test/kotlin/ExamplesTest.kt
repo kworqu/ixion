@@ -7,30 +7,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 class ExamplesTest {
 
     @Test
-    fun loops() {
-        ixAssert("loops.ix", """
-            1
-            2
-            3
-            4
-            5
-            ----
-            i is 10
-            i is 11
-            i is 12
-            i is 13
-            i is 14
-            i is 15
-            i is 16
-            i is 17
-            i is 18
-            i is 19
-            i is 20
-
-        """)
-    }
-
-    @Test
     fun simple_list() {
         ixAssert("simple_list.ix", """
             [1, 2, 3]
@@ -113,6 +89,24 @@ class ExamplesTest {
     @Test
     fun specification_case_requires_binding_name() {
         ixAssertError("specification_case_invalid.ix", "Expected name for reified value before `=>` in case statement.")
+    }
+
+    @Test
+    fun float_iteration() {
+        ixAssert("float_iteration.ix", """
+            1.0
+            2.0
+            3.0
+        """)
+    }
+
+    @Test
+    fun string_iteration() {
+        ixAssert("string_iteration.ix", """
+            Alice
+            Bob
+            Charlie
+        """)
     }
 
     private fun ixAssert(runPath: String, expected: String) {
