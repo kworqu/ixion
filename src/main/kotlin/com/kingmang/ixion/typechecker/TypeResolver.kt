@@ -44,7 +44,11 @@ object TypeResolver {
 
         // builtin
         if (par is BuiltInType && arg is BuiltInType) {
-            return par == arg
+            if (par == arg) return true
+            if (par.isNumeric && arg.isNumeric) {
+                return BuiltInType.widen(par, arg) == par
+            }
+            return false
         }
 
         // list

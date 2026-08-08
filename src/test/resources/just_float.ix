@@ -1,0 +1,5 @@
+use <std>
+
+pub def main(){
+    std::println(1.0)
+}

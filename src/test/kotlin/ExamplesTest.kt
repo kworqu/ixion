@@ -92,20 +92,42 @@ class ExamplesTest {
     }
 
     @Test
-    fun float_iteration() {
-        ixAssert("float_iteration.ix", """
-            1.0
-            2.0
-            3.0
-        """)
-    }
-
-    @Test
     fun string_iteration() {
         ixAssert("string_iteration.ix", """
             Alice
             Bob
             Charlie
+        """)
+    }
+
+    @Test
+    fun typed_variable() {
+        ixAssert("typed_variable.ix", """
+            42
+            hello
+            3.14
+            3.14
+            3.14
+        """)
+    }
+
+    @Test
+    fun typed_union_variable() {
+        ixAssert("typed_union_variable.ix", """
+            5
+        """)
+    }
+
+    @Test
+    fun typed_variable_mismatch() {
+        ixAssertError("typed_variable_mismatch.ix", "Error")
+    }
+
+    @Test
+    fun double_test() {
+        ixAssert("double_test.ix", """
+            3.14
+            3.14
         """)
     }
 

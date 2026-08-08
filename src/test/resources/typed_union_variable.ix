@@ -1,0 +1,7 @@
+use <std>
+
+pub def main(){
+    type Num = int | string
+    var x: Num = 5
+    std::println(x)
+}

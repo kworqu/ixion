@@ -93,7 +93,10 @@ class LexerImpl(file: File) : Lexer {
 
         var nextTwoChars: kotlin.String
         do {
-            advance()
+            val c = advance()
+            if (c == '\u0000') {
+                throw RuntimeException("Unterminated multi-line comment at line $line")
+            }
             nextTwoChars = peek().toString() + peekNext()
         } while (nextTwoChars != "*/")
 
@@ -196,6 +199,9 @@ class LexerImpl(file: File) : Lexer {
 
         consumeFloatSuffix()
         consumeExponentPart()
+        if (peek() == 'd') {
+            type = TokenType.DOUBLE
+        }
         consumeDoubleSuffix()
 
         val value = clearStringBuilder()
@@ -286,8 +292,7 @@ class LexerImpl(file: File) : Lexer {
         }
 
         advance()
-        advance()
-        return Token(TokenType.ERROR, line, col, twoCharOperator)
+        return Token(TokenType.ERROR, line, col, currentChar.toString())
     }
 
     private fun isAlpha(c: Char): Boolean {

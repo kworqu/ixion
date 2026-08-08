@@ -1,0 +1,8 @@
+use <std>
+
+pub def main(){
+    var list = [1, 2, 3]
+    for item : list {
+        std::println(item)
+    }
+}

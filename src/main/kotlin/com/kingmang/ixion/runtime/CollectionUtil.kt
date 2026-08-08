@@ -92,10 +92,7 @@ class CollectionUtil private constructor() {
         val name: String
     ) : Iterable<Any?>, Iterator<Any?> {
 
-        companion object {
-            @JvmStatic
-            private var currentIndex = 0
-        }
+        private var currentIndex = 0
 
         constructor(name: String) : this(ArrayList<Any?>(), name)
 

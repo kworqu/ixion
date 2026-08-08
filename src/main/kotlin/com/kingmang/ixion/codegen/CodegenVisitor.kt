@@ -251,6 +251,11 @@ class CodegenVisitor(val api: IxApi, val rootContext: Context?, val source: IxFi
                 }
 
                 TokenType.POW -> {
+                    castAndAccept(ga!!, left, right, this)
+                    ga.visitMethodInsn(
+                        Opcodes.INVOKESTATIC, "java/lang/Math", "pow", "(DD)D", false
+                    )
+                    ga.visitInsn(Opcodes.D2I)
                 }
 
                 TokenType.ADD, TokenType.SUB, TokenType.MUL, TokenType.DIV -> arithmetic(
@@ -848,6 +853,7 @@ class CodegenVisitor(val api: IxApi, val rootContext: Context?, val source: IxFi
         val ga = functionStack.peek().ga!!
         expression.expression.accept(this)
         if (expression.realType is BuiltInType) {
+            ga.visitInsn(Opcodes.DUP)
             (expression.realType as BuiltInType).pushOne(ga)
             val op: Int = when (expression.operator.type) {
                 TokenType.PLUSPLUS -> (expression.realType as BuiltInType).addOpcode
@@ -1109,12 +1115,47 @@ class CodegenVisitor(val api: IxApi, val rootContext: Context?, val source: IxFi
      */
     override fun visitVariable(statement: VariableStatement): Optional<ClassWriter> {
         val funcType = functionStack.peek()
-        statement.expression.accept(this)
 
         var type = currentContext!!.getVariable(statement.identifier())
         if (type is GenericType) {
             type = funcType.currentSpecialization!![type.key]
         }
+
+        val exprType = statement.expression.realType
+
+        if (type is BuiltInType && statement.expression is LiteralExpression && exprType is BuiltInType
+            && exprType != type && exprType.isNumeric && type.isNumeric) {
+            val target = if (BuiltInType.widen(type, exprType) == type) type else exprType
+            val transformed = TypeResolver.getValueFromString(statement.expression.literal.source, target)
+            when (type) {
+                BuiltInType.FLOAT -> funcType.ga!!.push(transformed as Float)
+                BuiltInType.DOUBLE -> funcType.ga!!.push(transformed as Double)
+                BuiltInType.INT -> funcType.ga!!.push(transformed as Int)
+                BuiltInType.CHAR -> funcType.ga!!.push((transformed as Number).toInt())
+                else -> {
+                    statement.expression.accept(this)
+                }
+            }
+        } else {
+            statement.expression.accept(this)
+
+            if (type is UnionType || type is ExternalType && type.typeClass == Any::class.java) {
+                if (exprType is BuiltInType && exprType != BuiltInType.STRING && exprType != BuiltInType.ANY) {
+                    exprType.doBoxing(funcType.ga!!)
+                }
+            } else if (type is BuiltInType && exprType is BuiltInType) {
+                if (exprType != type && exprType.isNumeric && type.isNumeric) {
+                    when {
+                        exprType == BuiltInType.INT && type == BuiltInType.FLOAT -> funcType.ga!!.visitInsn(Opcodes.I2F)
+                        exprType == BuiltInType.INT && type == BuiltInType.DOUBLE -> funcType.ga!!.visitInsn(Opcodes.I2D)
+                        exprType == BuiltInType.FLOAT && type == BuiltInType.DOUBLE -> funcType.ga!!.visitInsn(Opcodes.F2D)
+                        exprType == BuiltInType.DOUBLE && type == BuiltInType.FLOAT -> funcType.ga!!.visitInsn(Opcodes.D2F)
+                        exprType == BuiltInType.INT && type == BuiltInType.CHAR -> funcType.ga!!.visitInsn(Opcodes.I2C)
+                    }
+                }
+            }
+        }
+
         statement.localIndex = funcType.ga!!.newLocal(Type.getType(type!!.descriptor))
         funcType.localMap[statement.identifier()] = statement.localIndex
         funcType.ga!!.storeLocal(statement.localIndex, Type.getType(type.descriptor))

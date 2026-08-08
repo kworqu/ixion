@@ -1,0 +1,6 @@
+use <std>
+
+pub def main(){
+    var x: int = "hello"
+    std::println(x)
+}

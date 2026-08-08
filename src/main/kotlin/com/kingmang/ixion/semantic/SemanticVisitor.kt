@@ -511,7 +511,12 @@ class SemanticVisitor(val ixApi: IxApi, val rootContext: Context?, val source: I
         var type: IxType?
         if (statement.next.isEmpty) {
             val bt = TypeUtils.getFromString(statement.identifier!!.source)
-            type = Objects.requireNonNullElseGet(bt, Supplier { UnknownType(statement.identifier.source) })
+            type = if (bt != null) {
+                bt
+            } else {
+                currentContext!!.getVariable(statement.identifier.source)
+                    ?: UnknownType(statement.identifier.source)
+            }
             if (statement.listType) {
                 type = ListType(type!!)
             }
@@ -552,7 +557,13 @@ class SemanticVisitor(val ixApi: IxApi, val rootContext: Context?, val source: I
      */
     override fun visitVariable(statement: VariableStatement): Optional<IxType> {
         val t: Optional<IxType> = statement.expression.accept(this)
-        val type: IxType? = t.orElseGet(Supplier { UnknownType() })
+        val exprType: IxType = t.orElseGet(Supplier { UnknownType() })
+
+        val type: IxType = if (statement.type.isPresent) {
+            visitTypeAlias(statement.type.get()).orElseGet(Supplier { UnknownType() })
+        } else {
+            exprType
+        }
 
         var mut = Mutability.IMMUTABLE
         if (statement.mutability.type == TokenType.VARIABLE) {

@@ -29,7 +29,7 @@ class Context {
 
     fun getVariable(name: String): IxType? {
         return when {
-            variables[name] != null -> variables[name]
+            variables.containsKey(name) -> variables[name]
             parent != null -> parent!!.getVariable(name)
             else -> null
         }
@@ -57,8 +57,10 @@ class Context {
     }
 
     fun setVariableType(name: String, type: IxType?) {
-        if (variables[name] != null) {
+        if (variables.containsKey(name)) {
             variables[name] = type
+        } else if (parent != null) {
+            parent!!.setVariableType(name, type)
         }
     }
 }
