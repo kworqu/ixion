@@ -78,7 +78,7 @@ class TypeCheckVisitor(private val ixApi: IxApi, private val rootContext: Contex
 
         when (expression.left) {
             is IdentifierExpression -> {
-                if (expression.left.realType !== expression.right.realType) {
+                if (!typesMatch(expression.left.realType, expression.right.realType)) {
                     BadAssignmentException().send(ixApi, file, expression, expression.left.identifier.source)
                 }
             }
@@ -716,7 +716,12 @@ class TypeCheckVisitor(private val ixApi: IxApi, private val rootContext: Contex
         var type: IxType?
         if (statement.next.isEmpty) {
             val bt = TypeUtils.getFromString(statement.identifier!!.source!!)
-            type = Objects.requireNonNullElseGet(bt) { UnknownType(statement.identifier.source) }
+            type = if (bt != null) {
+                bt
+            } else {
+                currentContext.getVariable(statement.identifier.source!!)
+                    ?: UnknownType(statement.identifier.source)
+            }
             if (statement.listType) {
                 type = ListType(type!!)
             }
@@ -753,7 +758,17 @@ class TypeCheckVisitor(private val ixApi: IxApi, private val rootContext: Contex
         val t: Optional<IxType> = expr.accept(this)
 
         if (t.isPresent) {
-            currentContext.setVariableType(statement.name.source, t.get())
+            val inferredType = t.get()
+
+            if (statement.type.isPresent) {
+                val declaredType: IxType = visitTypeAlias(statement.type.get()).orElseThrow()
+                if (!typesMatch(declaredType, inferredType)) {
+                    BadAssignmentException().send(ixApi, file, statement, statement.name.source, declaredType.name, inferredType.name)
+                }
+                currentContext.setVariableType(statement.name.source, declaredType)
+            } else {
+                currentContext.setVariableType(statement.name.source, inferredType)
+            }
         } else {
             TypeNotResolvedException().send(ixApi, file, expr, statement.name.source)
         }

@@ -62,7 +62,7 @@ class Parser(private val lexer: Lexer) {
         // Register binary operators with associativity and precedence
         infixLeft(TokenType.ADD, Precedence.SUM)
         infixLeft(TokenType.SUB, Precedence.SUM)
-        infixLeft(TokenType.MOD, Precedence.SUM)
+        infixLeft(TokenType.MOD, Precedence.PRODUCT)
         infixLeft(TokenType.MUL, Precedence.PRODUCT)
         infixLeft(TokenType.DIV, Precedence.PRODUCT)
         infixRight(TokenType.POW, Precedence.EXPONENT)
@@ -532,9 +532,14 @@ class Parser(private val lexer: Lexer) {
         val pos = this.pos
         val mutability = consume()
         val name = consume(TokenType.IDENTIFIER, "Expected variable name.")
+        val type: Optional<TypeStatement> = if (match(TokenType.COLON)) {
+            Optional.of(parseUnion())
+        } else {
+            Optional.empty()
+        }
         consume(TokenType.ASSIGN, "Expected assignment operator.")
         val expression = expression()
-        return VariableStatement(pos, mutability, name, expression, Optional.empty<TypeStatement>())
+        return VariableStatement(pos, mutability, name, expression, type)
     }
 
 
